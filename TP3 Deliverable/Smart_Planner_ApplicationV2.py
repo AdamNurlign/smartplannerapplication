@@ -10,8 +10,6 @@ def appStarted(app):
     app.startTime=9
 
     app.eventDict={}
-    app.testEvent=Event(app,"testEvent","Regular","This is the event description","Sunday",9,13,"light green")
-    app.eventDict["testEvent"]=app.testEvent
 
     app.buttonList=[]
     app.deleteButton=Button(app,"Delete","Delete","red",7,1,None)
@@ -20,7 +18,7 @@ def appStarted(app):
     app.createEventButton=Button(app,"createEvent","createEvent","light green",7,2,"createEventTextBox")
     app.buttonList.append(app.createEventButton)
 
-    app.createEventTextBox=TextBox(app,"createEventTextBox",["This is the first question","This is the second question"])
+    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?"])
    
    
     app.textBoxDict=dict()
@@ -45,9 +43,9 @@ def mousePressed(app,event):
     app.deleteButton.mousePressed(app,event)
     app.createEventButton.mousePressed(app,event)
 
-    app.createEventTextBox.mousePressed(app,event)
 
     for (textBoxName,textBox) in app.textBoxDict.items():
+        textBox.mousePressed(app,event)
         textBox.closeButton.mousePressed(app,event)
         textBox.enterButton.mousePressed(app,event)
     
@@ -115,14 +113,22 @@ def redrawAll(app,canvas):
 #These are some helper functions to help us draw date
 
 def determineWidthFromDate(date):
-    if date=="Sunday":return 0
-    elif date=="Monday":return 1
-    elif date=="Tuesday":return 2
-    elif date=="Wednesday":return 3
-    elif date=="Thursday":return 4
-    elif date=="Friday":return 5
-    elif date=="Saturday":return 6
-    else: return 0
+    if date=="Sunday":
+        return 0
+    elif date=="Monday":
+        return 1
+    elif date=="Tuesday":
+        return 2
+    elif date=="Wednesday":
+        return 3
+    elif date=="Thursday":
+        return 4
+    elif date=="Friday":
+        return 5
+    elif date=="Saturday":
+        return 6
+    else: 
+        return 0
 
 
     
@@ -140,8 +146,8 @@ class Event:
         #0 to 23 is our set of allowable startTime and endTime 
 
     def mousePressed(self,app,event):
-        startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(date)
-        endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(date)+1)
+        startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
+        endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
         startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime-app.startTime)
         endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime-app.startTime)
         if (event.x>=startXCord) and (event.y
@@ -155,8 +161,8 @@ class Event:
 
     def drawEvent(self,app,canvas):
         
-        startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(date)
-        endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(date)+1)
+        startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
+        endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
         startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime-app.startTime)
         endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime-app.startTime)
         if (app.clickedDelete==False):
@@ -200,6 +206,12 @@ class Button:
                 app.clickedDelete=True
             elif (self.buttonType=="closeTextBox"):
                 app.textBoxDict[self.textBoxName].clicked=False
+            elif (self.buttonType=="enterTextBox"):
+                app.textBoxDict[self.textBoxName].processCreateEventAnswers(app)
+                app.textBoxDict[self.textBoxName].clicked=False
+
+                
+                
             else: pass
 
             
@@ -230,6 +242,7 @@ class TextBox:
         #(self,app,name,buttonType,color,xPos,yPos,textBoxName)
         self.closeButton=Button(app,"close","closeTextBox","red",2,8.5,name)
         self.enterButton=Button(app,"enter","enterTextBox","light green",4,8.5,name)
+
 
 
     def mousePressed(self,app,event):
@@ -290,6 +303,18 @@ class TextBox:
                                        fill="black")
             self.closeButton.drawButton(app,canvas)
             self.enterButton.drawButton(app,canvas)
+
+    def processCreateEventAnswers(self,app):
+        time1=int(self.answers[0])
+        time2=int(self.answers[1])
+        date=self.answers[2]
+        name=self.answers[3]
+        #(self,app,name,eventType,description,date,startTime,endTime,color)
+        newEvent=Event(app,name,"newEvent","newEvent description",date,time1,time2,"light green")
+        app.eventDict[name]=newEvent
+        for i in range(len(self.answers)):
+                    self.answers[i]=""
+        
                     
 
                 
