@@ -14,10 +14,10 @@ def appStarted(app):
     app.eventDict["testEvent"]=app.testEvent
 
     app.buttonList=[]
-    app.deleteButton=Button(app,"Delete","Delete","red",1,None)
+    app.deleteButton=Button(app,"Delete","Delete","red",7,1,None)
     app.buttonList.append(app.deleteButton)
 
-    app.createEventButton=Button(app,"createEvent","createEvent","light green",2,"createEventTextBox")
+    app.createEventButton=Button(app,"createEvent","createEvent","light green",7,2,"createEventTextBox")
     app.buttonList.append(app.createEventButton)
 
     app.createEventTextBox=TextBox(app,"createEventTextBox",["This is the first question","This is the second question"])
@@ -69,7 +69,6 @@ def drawWeekCalendarTime(app,canvas):
         timeToWrite=(app.startTime+i)%12
         if timeToWrite==0:
             timeToWrite=12
-
         canvas.create_text(app.borderWidth/2,app.borderHeight+((app.height-app.borderHeight*2)/12)*i,
         text=str(timeToWrite)+" "+timeSuffix,fill="black")
 
@@ -173,12 +172,13 @@ class Event:
         
         
 class Button:
-    def __init__(self,app,name,buttonType,color,yPos,textBox):
+    def __init__(self,app,name,buttonType,color,xPos,yPos,textBox):
         self.name=name
         self.buttonType=buttonType
         self.color=color
         self.buttonWidth=50
         self.buttonHeight=25
+        self.xPos=xPos
         self.yPos=yPos
         self.textBox=textBox
 
@@ -197,16 +197,17 @@ class Button:
 
 
     def drawButton(self,app,canvas):
-        canvas.create_rectangle(app.width-app.borderWidth,
-                                app.borderHeight+(self.yPos*(app.height/12)),
-                                app.width,
-                                app.borderHeight+((self.yPos+1)*(app.height/12)),
+        canvas.create_rectangle(app.borderWidth+(self.xPos*((app.width-2*app.borderWidth)/7)),
+                                app.borderHeight+(self.yPos*((app.height-2*app.borderHeight)/12)),
+                                app.borderWidth+((self.xPos+1)*((app.width-2*app.borderWidth)/7)),
+                                app.borderHeight+((self.yPos+1)*((app.height-2*app.borderHeight)/12)),
                                 fill=self.color)
     
+        textX=((app.borderWidth+(self.xPos*((app.width-2*app.borderWidth)/7)))+(app.borderWidth+((self.xPos+1)*((app.width-2*app.borderWidth)/7))))/2
+        textY=((app.borderHeight+(self.yPos*((app.height-2*app.borderHeight)/12)))+(app.borderHeight+((self.yPos+1)*((app.height-2*app.borderHeight)/12))))/2
+        canvas.create_text(textX,
+                            textY,text=self.name,fill="black")
 
-        canvas.create_text((2*app.width-app.borderWidth)/2,
-                            app.borderHeight+((self.yPos+0.5)*(app.height/12)),text=self.name,fill="black")
-        
 class TextBox:
     def __init__(self,app,name,questions):
         self.name=name
@@ -271,8 +272,7 @@ class TextBox:
                     canvas.create_text((x0+x1)/2,(y0+y1)/2,text=self.answers[listIndex],
                                        fill="black")
                     
-    #def drawTextBoxButtons(self,app,canvas):
-       # closeButton=Button(app,"closeTextBoxButton","closeTextBoxButton","red",)
+
                 
         
 
