@@ -46,6 +46,10 @@ def mousePressed(app,event):
     app.createEventButton.mousePressed(app,event)
 
     app.createEventTextBox.mousePressed(app,event)
+
+    for (textBoxName,textBox) in app.textBoxDict.items():
+        textBox.closeButton.mousePressed(app,event)
+        textBox.enterButton.mousePressed(app,event)
     
 
 
@@ -187,10 +191,19 @@ class Button:
             event.y>=y0) and (
                 event.x<=x1) and (
                     event.y<=y1):
+            if (self.textBoxName!=None) and (self.buttonType!="closeTextBox"):
+                app.textBoxDict[self.textBoxName].clicked=True
+            else: 
+                pass
+                
             if (self.buttonType=="Delete"):
                 app.clickedDelete=True
-            if (self.textBoxName!=None):
-                app.textBoxDict[self.textBoxName].clicked=True
+            elif (self.buttonType=="closeTextBox"):
+                app.textBoxDict[self.textBoxName].clicked=False
+            else: pass
+
+            
+            
     
 
 
@@ -214,6 +227,10 @@ class TextBox:
         self.boxCurrentlyTyping=0
         self.answers=[ ""  for i in range(len(self.questions))]
         self.clicked=False
+        #(self,app,name,buttonType,color,xPos,yPos,textBoxName)
+        self.closeButton=Button(app,"close","closeTextBox","red",2,8.5,name)
+        self.enterButton=Button(app,"enter","enterTextBox","light green",4,8.5,name)
+
 
     def mousePressed(self,app,event):
         if (event.x>=0.25*app.width) and (
@@ -271,6 +288,8 @@ class TextBox:
                     listIndex=(int)(i/2)
                     canvas.create_text((x0+x1)/2,(y0+y1)/2,text=self.answers[listIndex],
                                        fill="black")
+            self.closeButton.drawButton(app,canvas)
+            self.enterButton.drawButton(app,canvas)
                     
 
                 
