@@ -21,16 +21,11 @@ def appStarted(app):
     app.buttonList.append(app.createEventButton)
 
     app.createEventTextBox=TextBox(app,"createEventTextBox",["This is the first question","This is the second question"])
+   
+   
     app.textBoxDict=dict()
     app.textBoxDict["createEventTextBox"]=app.createEventTextBox
 
-
-
-  
-    app.clickedTextBoxDict=dict()
-    app.clickedTextBoxDict["createEventTextBox"]=False
-
-    
 
 
 
@@ -172,7 +167,7 @@ class Event:
         
         
 class Button:
-    def __init__(self,app,name,buttonType,color,xPos,yPos,textBox):
+    def __init__(self,app,name,buttonType,color,xPos,yPos,textBoxName):
         self.name=name
         self.buttonType=buttonType
         self.color=color
@@ -180,18 +175,22 @@ class Button:
         self.buttonHeight=25
         self.xPos=xPos
         self.yPos=yPos
-        self.textBox=textBox
+        self.textBoxName=textBoxName
 
 
     def mousePressed(self,app,event):
-        if (event.x>=app.width-app.borderWidth) and (
-            event.y>=app.borderHeight+(self.yPos*(app.height/12))) and (
-                event.x<=app.width) and (
-                    event.y<=app.borderHeight+((self.yPos+1)*(app.height/12))):
+        x0=app.borderWidth+(self.xPos*((app.width-2*app.borderWidth)/7))
+        y0=app.borderHeight+(self.yPos*((app.height-2*app.borderHeight)/12))
+        x1=app.borderWidth+((self.xPos+1)*((app.width-2*app.borderWidth)/7))
+        y1=app.borderHeight+((self.yPos+1)*((app.height-2*app.borderHeight)/12))
+        if (event.x>=x0) and (
+            event.y>=y0) and (
+                event.x<=x1) and (
+                    event.y<=y1):
             if (self.buttonType=="Delete"):
                 app.clickedDelete=True
-            if (self.textBox!=None):
-                app.clickedTextBoxDict[self.textBox]=True
+            if (self.textBoxName!=None):
+                app.textBoxDict[self.textBoxName].clicked=True
     
 
 
@@ -214,13 +213,14 @@ class TextBox:
         self.questions=questions
         self.boxCurrentlyTyping=0
         self.answers=[ ""  for i in range(len(self.questions))]
+        self.clicked=False
 
     def mousePressed(self,app,event):
         if (event.x>=0.25*app.width) and (
             event.y>=0.25*app.height) and (
                 event.x<=0.75*app.width) and (
                     event.y<=0.75*app.height):
-            if (app.clickedTextBoxDict[self.name]==True):
+            if (self.clicked):
                 for i in range(len(self.questions)*2):
                     y0=0.25*app.height+((i/10)*0.5*app.height)
                     y1=0.25*app.height+(((i+1)/10)*0.5*app.height)
@@ -231,7 +231,7 @@ class TextBox:
                             self.boxCurrentlyTyping=i/2
 
     def keyPressed(self,app,event):
-        if (app.clickedTextBoxDict[self.name]==True):
+        if (self.clicked==True):
             i=(int) (self.boxCurrentlyTyping)
             y0=0.25*app.height+((i/10)*0.5*app.height)
             y1=0.25*app.height+(((i+1)/10)*0.5*app.height)
@@ -252,7 +252,7 @@ class TextBox:
     
 
     def drawTextBox(self,app,canvas):
-        if (app.clickedTextBoxDict[self.name]==True):
+        if (self.clicked==True):
             canvas.create_rectangle(0.25*app.width,0.25*app.height,
                                     0.75*app.width,0.75*app.height,
                                     fill="light yellow")
