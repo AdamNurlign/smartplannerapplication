@@ -24,14 +24,14 @@ def appStarted(app):
 
 
 
-    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?","Event Description:"])
+    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
 
    
    
     app.textBoxDict=dict()
     app.textBoxDict["createEventTextBox"]=app.createEventTextBox
 
-    app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?","Event Description:"])
+    app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
     app.textBoxDict["editEventTextBox"]=app.editEventTextBox
 
 
@@ -44,6 +44,14 @@ def appStarted(app):
     app.eventToEdit=None
     
     
+def convertTime(app,timeString):
+    hour,minute=timeString.split(":")
+    hour=float(hour)
+    if (hour-9>=0):
+        hour=hour-app.startTime
+    else:
+        hour=hour+(12-app.startTime)
+    return hour+(float(minute)/60)
 
 def mousePressed(app,event):
     app.borderWidth=app.width/10
@@ -165,8 +173,8 @@ class Event:
     def mousePressed(self,app,event):
         startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
         endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
-        startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime-app.startTime)
-        endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime-app.startTime)
+        startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime)
+        endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime)
         if (event.x>=startXCord) and (event.y
                 >=startYCord) and (event.x<=endXCord) and (event.y<=endYCord):
             if (app.clickedDeleteEvent==True):
@@ -190,8 +198,8 @@ class Event:
         
         startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
         endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
-        startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime-app.startTime)
-        endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime-app.startTime)
+        startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime)
+        endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime)
         if (app.clickedDeleteEvent==False) and (app.clickedEditEvent==False):
             canvas.create_rectangle(startXCord,startYCord,endXCord,endYCord,
             fill=self.color)
@@ -341,8 +349,8 @@ class TextBox:
 
     def processTextBoxAnswers(self,app):
         if (self.name=="createEventTextBox") and (app.createEventTextBox.clicked==True):
-            time1=int(self.answers[0])
-            time2=int(self.answers[1])
+            time1=convertTime(app,self.answers[0])
+            time2=convertTime(app,self.answers[1])
             date=self.answers[2]
             name=self.answers[3]
             description=self.answers[4]
@@ -353,8 +361,8 @@ class TextBox:
                         self.answers[i]=""
 
         elif (self.name=="editEventTextBox") and (app.editEventTextBox.clicked==True):
-            newTime1=int(self.answers[0])
-            newTime2=int(self.answers[1])
+            newTime1=convertTime(app,self.answers[0])
+            newTime2=convertTime(app,self.answers[1])
             newDate=self.answers[2]
             newName=self.answers[3]
             newDescription=self.answers[4]
@@ -362,7 +370,7 @@ class TextBox:
                 app.eventDict[newName] = app.eventDict.pop(app.eventToEdit.name)
                 app.eventToEdit.name=newName
                 app.eventToEdit.startTime=newTime1
-                app.eventToEdit.endtime=newTime2
+                app.eventToEdit.endTime=newTime2
                 app.eventToEdit.date=newDate
                 app.eventToEdit.description=newDescription
 
