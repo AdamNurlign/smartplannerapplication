@@ -24,20 +24,22 @@ def appStarted(app):
 
 
 
-    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?"])
+    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?","Event Description:"])
 
    
    
     app.textBoxDict=dict()
     app.textBoxDict["createEventTextBox"]=app.createEventTextBox
 
-    app.editEventTextBox=TextBox(app,"editEventTextBox",["What do you want to rename your event?"])
+    app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?","Event Description:"])
     app.textBoxDict["editEventTextBox"]=app.editEventTextBox
 
 
     
     app.clickedDeleteEvent=False
     app.clickedEditEvent=False
+
+
 
     app.eventToEdit=None
     
@@ -154,6 +156,9 @@ class Event:
         self.startTime=startTime
         self.endTime=endTime
         self.color=color
+
+        self.clickedEventDescription=False
+
         
 
 
@@ -171,6 +176,14 @@ class Event:
                 app.editEventTextBox.clicked=True
                 app.eventToEdit=self
                 app.clickedEditEvent=False
+            else:
+                if (self.clickedEventDescription==False):
+                    self.clickedEventDescription=True
+                else:
+                    self.clickedEventDescription=False
+
+
+                
             
                 
     def drawEvent(self,app,canvas):
@@ -188,6 +201,11 @@ class Event:
         
         canvas.create_text((endXCord+startXCord)/2,(endYCord+startYCord)/2,
                            text=self.name,fill="black")
+
+        if (self.clickedEventDescription==True):
+            canvas.create_rectangle(0.25*app.width,0.25*app.height,0.75*app.width,0.75*app.height,
+                 fill="light yellow"                   )
+            canvas.create_text(0.5*app.width,0.5*app.height,text=self.description,fill="black")
         
         
 class Button:
@@ -217,7 +235,8 @@ class Button:
                 pass
                 
             if (self.buttonType=="Delete"):
-                app.clickedDeleteEvent=True
+                if (len(app.eventDict)!=0):
+                    app.clickedDeleteEvent=True
             elif (self.buttonType=="closeTextBox"):
                 app.textBoxDict[self.textBoxName].clicked=False
             elif (self.buttonType=="enterTextBox"):
@@ -225,7 +244,8 @@ class Button:
                 app.textBoxDict[self.textBoxName].clicked=False
  
             elif (self.buttonType=="editEvent"):
-                app.clickedEditEvent=True 
+                if (len(app.eventDict)!=0):
+                    app.clickedEditEvent=True 
                 
             else: pass
 
@@ -255,8 +275,8 @@ class TextBox:
         self.answers=[ ""  for i in range(len(self.questions))]
         self.clicked=False
         #(self,app,name,buttonType,color,xPos,yPos,textBoxName)
-        self.closeButton=Button(app,"close","closeTextBox","red",2,8.5,name)
-        self.enterButton=Button(app,"enter","enterTextBox","light green",4,8.5,name)
+        self.closeButton=Button(app,"close","closeTextBox","red",2,9.75,name)
+        self.enterButton=Button(app,"enter","enterTextBox","light green",4,9.75,name)
 
 
 
@@ -325,40 +345,31 @@ class TextBox:
             time2=int(self.answers[1])
             date=self.answers[2]
             name=self.answers[3]
+            description=self.answers[4]
             #(self,app,name,eventType,description,date,startTime,endTime,color)
-            newEvent=Event(app,name,"newEvent","newEvent description",date,time1,time2,"light green")
+            newEvent=Event(app,name,"newEvent",description,date,time1,time2,"light green")
             app.eventDict[name]=newEvent
             for i in range(len(self.answers)):
                         self.answers[i]=""
 
         elif (self.name=="editEventTextBox") and (app.editEventTextBox.clicked==True):
-            newName=self.answers[0]
+            newTime1=int(self.answers[0])
+            newTime2=int(self.answers[1])
+            newDate=self.answers[2]
+            newName=self.answers[3]
+            newDescription=self.answers[4]
             if (app.eventToEdit!=None):
-                
                 app.eventDict[newName] = app.eventDict.pop(app.eventToEdit.name)
                 app.eventToEdit.name=newName
+                app.eventToEdit.startTime=newTime1
+                app.eventToEdit.endtime=newTime2
+                app.eventToEdit.date=newDate
+                app.eventToEdit.description=newDescription
+
 
             app.eventToEdit=None
             for i in range(len(self.answers)):
                         self.answers[i]=""
-            
-
-        
-        
-                    
-
-                
-        
-
-            
-
-
-
-          
-
-    
-    
-        
    
 
 runApp(width=1000,height=600)
