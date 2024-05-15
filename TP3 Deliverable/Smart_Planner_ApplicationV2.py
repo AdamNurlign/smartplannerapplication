@@ -18,16 +18,28 @@ def appStarted(app):
     app.createEventButton=Button(app,"createEvent","createEvent","light green",7,2,"createEventTextBox")
     app.buttonList.append(app.createEventButton)
 
+    app.editEventButton=Button(app,"editEvent","editEvent","yellow",7,3,None)
+    app.buttonList.append(app.editEventButton)
+
+
+
+
     app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start?","What time does your event end?","What day is your event on?","What is the name of the event?"])
+
    
    
     app.textBoxDict=dict()
     app.textBoxDict["createEventTextBox"]=app.createEventTextBox
 
+    app.editEventTextBox=TextBox(app,"editEventTextBox",["What do you want to rename your event?"])
+    app.textBoxDict["editEventTextBox"]=app.editEventTextBox
 
 
+    
+    app.clickedDeleteEvent=False
+    app.clickedEditEvent=False
 
-    app.clickedDelete=False
+    app.eventToEdit=None
     
     
 
@@ -40,8 +52,8 @@ def mousePressed(app,event):
     for key in dict_copy:
         dict_copy[key].mousePressed(app,event)
 
-    app.deleteButton.mousePressed(app,event)
-    app.createEventButton.mousePressed(app,event)
+    for button in app.buttonList:
+        button.mousePressed(app,event)
 
 
     for (textBoxName,textBox) in app.textBoxDict.items():
@@ -53,7 +65,8 @@ def mousePressed(app,event):
 
 
 def keyPressed(app,event):
-    app.createEventTextBox.keyPressed(app,event)
+    for (textBoxName,textBox) in app.textBoxDict.items():
+        textBox.keyPressed(app,event)
     
 
 def drawWeekCalendarTime(app,canvas):
@@ -143,7 +156,6 @@ class Event:
         self.color=color
         
 
-        #0 to 23 is our set of allowable startTime and endTime 
 
     def mousePressed(self,app,event):
         startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
@@ -152,20 +164,22 @@ class Event:
         endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime-app.startTime)
         if (event.x>=startXCord) and (event.y
                 >=startYCord) and (event.x<=endXCord) and (event.y<=endYCord):
-            if (app.clickedDelete==True):
+            if (app.clickedDeleteEvent==True):
                 app.eventDict.pop(self.name)
-                app.clickedDelete=False
+                app.clickedDeleteEvent=False
+            elif (app.clickedEditEvent==True):
+                app.editEventTextBox.clicked=True
+                app.eventToEdit=self
+                app.clickedEditEvent=False
             
                 
-
-
     def drawEvent(self,app,canvas):
         
         startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
         endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
         startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime-app.startTime)
         endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime-app.startTime)
-        if (app.clickedDelete==False):
+        if (app.clickedDeleteEvent==False) and (app.clickedEditEvent==False):
             canvas.create_rectangle(startXCord,startYCord,endXCord,endYCord,
             fill=self.color)
         else:
@@ -197,20 +211,21 @@ class Button:
             event.y>=y0) and (
                 event.x<=x1) and (
                     event.y<=y1):
-            if (self.textBoxName!=None) and (self.buttonType!="closeTextBox"):
+            if (self.textBoxName!=None) and (self.buttonType!="closeTextBox") and (self.buttonType!="enterTextBox"):
                 app.textBoxDict[self.textBoxName].clicked=True
             else: 
                 pass
                 
             if (self.buttonType=="Delete"):
-                app.clickedDelete=True
+                app.clickedDeleteEvent=True
             elif (self.buttonType=="closeTextBox"):
                 app.textBoxDict[self.textBoxName].clicked=False
             elif (self.buttonType=="enterTextBox"):
-                app.textBoxDict[self.textBoxName].processCreateEventAnswers(app)
+                app.textBoxDict[self.textBoxName].processTextBoxAnswers(app)
                 app.textBoxDict[self.textBoxName].clicked=False
-
-                
+ 
+            elif (self.buttonType=="editEvent"):
+                app.clickedEditEvent=True 
                 
             else: pass
 
@@ -304,16 +319,31 @@ class TextBox:
             self.closeButton.drawButton(app,canvas)
             self.enterButton.drawButton(app,canvas)
 
-    def processCreateEventAnswers(self,app):
-        time1=int(self.answers[0])
-        time2=int(self.answers[1])
-        date=self.answers[2]
-        name=self.answers[3]
-        #(self,app,name,eventType,description,date,startTime,endTime,color)
-        newEvent=Event(app,name,"newEvent","newEvent description",date,time1,time2,"light green")
-        app.eventDict[name]=newEvent
-        for i in range(len(self.answers)):
-                    self.answers[i]=""
+    def processTextBoxAnswers(self,app):
+        if (self.name=="createEventTextBox") and (app.createEventTextBox.clicked==True):
+            time1=int(self.answers[0])
+            time2=int(self.answers[1])
+            date=self.answers[2]
+            name=self.answers[3]
+            #(self,app,name,eventType,description,date,startTime,endTime,color)
+            newEvent=Event(app,name,"newEvent","newEvent description",date,time1,time2,"light green")
+            app.eventDict[name]=newEvent
+            for i in range(len(self.answers)):
+                        self.answers[i]=""
+
+        elif (self.name=="editEventTextBox") and (app.editEventTextBox.clicked==True):
+            newName=self.answers[0]
+            if (app.eventToEdit!=None):
+                
+                app.eventDict[newName] = app.eventDict.pop(app.eventToEdit.name)
+                app.eventToEdit.name=newName
+
+            app.eventToEdit=None
+            for i in range(len(self.answers)):
+                        self.answers[i]=""
+            
+
+        
         
                     
 
