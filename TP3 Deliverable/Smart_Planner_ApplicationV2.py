@@ -5,7 +5,7 @@ from cmu_112_graphics import *
 import datetime
 
 def appStarted(app):
-    app.calendarMode="Day"
+    app.calendarMode="Home"
     app.borderWidth=app.width/10
     app.borderHeight=app.height/10
     app.startTime=9
@@ -34,6 +34,9 @@ def appStarted(app):
     app.buttonList.append(app.prevDayButton)
     app.buttonList.append(app.switchModeButton)
 
+    app.startApplicationButton=Button(app,"start","start","light green",3,10,None)
+
+
 
     app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
 
@@ -41,7 +44,7 @@ def appStarted(app):
    
     app.textBoxDict=dict()
     app.textBoxDict["createEventTextBox"]=app.createEventTextBox
-
+ 
     app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
     app.textBoxDict["editEventTextBox"]=app.editEventTextBox
 
@@ -90,6 +93,9 @@ def mousePressed(app,event):
         textBox.mousePressed(app,event)
         textBox.closeButton.mousePressed(app,event)
         textBox.enterButton.mousePressed(app,event)
+    
+    if (app.calendarMode=="Home"):
+        app.startApplicationButton.mousePressed(app,event)
     
 
 
@@ -168,20 +174,33 @@ def drawEvents(app,canvas):
 def drawButtons(app,canvas):
     for i in range (len(app.buttonList)):
         app.buttonList[i].drawButton(app,canvas)
+        
 
 def drawTextBoxes(app,canvas):
     for (textBoxName,textBox) in (app.textBoxDict.items()):
         textBox.drawTextBox(app,canvas)
-    
+
+def drawHomeScreen(app,canvas):
+    canvas.create_rectangle(0,0,app.width,app.height,fill="light yellow")
+    canvas.create_text(app.width/2,
+    app.height/2,text="Welcome to Smart"+"\n"+"Planner Application!",font="Times 98 bold italic",
+    fill="light blue")
+
 def redrawAll(app,canvas):
-    if (app.calendarMode=="Week"):
+    if (app.calendarMode=="Home"):
+        drawHomeScreen(app,canvas)
+        app.startApplicationButton.drawButton(app,canvas)
+        return
+    elif (app.calendarMode=="Week"):
         drawWeekCalendarOutline(app,canvas)
         drawWeekCalendarTime(app,canvas)
         drawWeekCalendarDate(app,canvas)
-    if (app.calendarMode=="Day"):
+    else:
         drawDayCalendarOutline(app,canvas)
         drawDayCalendarTime(app,canvas)
         drawDayCalendarDate(app,canvas)
+    
+    
     drawEvents(app,canvas)
     drawButtons(app,canvas)
     drawTextBoxes(app,canvas)
@@ -353,6 +372,9 @@ class Button:
                 if (app.today.strftime("%A")=="Saturday"):
                     app.sunday = app.sunday - datetime.timedelta(days=7)
                     app.saturday = app.saturday - datetime.timedelta(days=7)
+            
+            elif (self.buttonType=="start"):
+                app.calendarMode="Week"
                 
 
                 
@@ -375,6 +397,7 @@ class Button:
         textY=((app.borderHeight+(self.yPos*((app.height-2*app.borderHeight)/12)))+(app.borderHeight+((self.yPos+1)*((app.height-2*app.borderHeight)/12))))/2
         canvas.create_text(textX,
                             textY,text=self.name,fill="black")
+        
 
 class TextBox:
     def __init__(self,app,name,questions):
