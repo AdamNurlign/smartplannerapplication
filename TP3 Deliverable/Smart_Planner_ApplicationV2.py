@@ -109,8 +109,11 @@ def drawWeekCalendarTime(app,canvas):
 def drawWeekCalendarDate(app,canvas):
     daysOfTheWeek=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
     for i in range(7):
+        dateToWrite=app.sunday+datetime.timedelta(days=(i))
+        date= "{}/{}".format(dateToWrite.month, dateToWrite.day)
+
         canvas.create_text(app.borderWidth+((app.width-app.borderWidth*2)/7)*((2*i+1)/2),
-        app.borderHeight/2,text=daysOfTheWeek[i],fill="black")
+        app.borderHeight/2,text=daysOfTheWeek[i]+"\n"+date,fill="black")
 
                 
 
