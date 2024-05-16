@@ -344,13 +344,15 @@ class Button:
                 else: pass
             elif (self.buttonType=="nextDay"):
                 app.today=app.today+datetime.timedelta(days=1)
-                app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
-                app.saturday = app.sunday + datetime.timedelta(days=6)
+                if (app.today.strftime("%A")=="Sunday"):
+                    app.sunday = app.sunday + datetime.timedelta(days=7)
+                    app.saturday = app.saturday + datetime.timedelta(days=7)
 
             elif (self.buttonType=="prevDay"):
                 app.today=app.today-datetime.timedelta(days=1)
-                app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
-                app.saturday = app.sunday + datetime.timedelta(days=6)
+                if (app.today.strftime("%A")=="Saturday"):
+                    app.sunday = app.sunday - datetime.timedelta(days=7)
+                    app.saturday = app.saturday - datetime.timedelta(days=7)
                 
 
                 
