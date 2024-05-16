@@ -5,6 +5,7 @@ from cmu_112_graphics import *
 import datetime
 
 def appStarted(app):
+    app.calendarMode="Day"
     app.borderWidth=app.width/10
     app.borderHeight=app.height/10
     app.startTime=9
@@ -26,7 +27,12 @@ def appStarted(app):
     app.buttonList.append(app.nextWeekButton)
     app.buttonList.append(app.prevWeekButton)
 
-
+    app.nextDayButton=Button(app,"nextDay","nextDay","light coral",7,6,None)
+    app.prevDayButton=Button(app,"prevDay","prevDay","dark slate gray",7,7,None)
+    app.switchModeButton=Button(app,"switchMode","switchMode","gray",7,8,None)
+    app.buttonList.append(app.nextDayButton)
+    app.buttonList.append(app.prevDayButton)
+    app.buttonList.append(app.switchModeButton)
 
 
     app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
@@ -106,6 +112,7 @@ def drawWeekCalendarTime(app,canvas):
         canvas.create_text(app.borderWidth/2,app.borderHeight+((app.height-app.borderHeight*2)/12)*i,
         text=str(timeToWrite)+" "+timeSuffix,fill="black")
 
+
 def drawWeekCalendarDate(app,canvas):
     daysOfTheWeek=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
     for i in range(7):
@@ -114,7 +121,9 @@ def drawWeekCalendarDate(app,canvas):
 
         canvas.create_text(app.borderWidth+((app.width-app.borderWidth*2)/7)*((2*i+1)/2),
         app.borderHeight/2,text=daysOfTheWeek[i]+"\n"+date,fill="black")
+    
 
+    
                 
 
 def drawWeekCalendarOutline(app,canvas):
@@ -128,7 +137,29 @@ def drawWeekCalendarOutline(app,canvas):
         canvas.create_rectangle(0+app.borderWidth,app.borderHeight+((app.height-app.borderHeight*2)/12)*i,
          app.width-app.borderWidth,
          app.borderHeight+((app.height-app.borderHeight*2)/12)*(i+1))
+    canvas.create_text(app.width-0.5*app.borderWidth,app.borderHeight,text=app.today.year,
+                       fill="black",font="Helvetica 26 bold")
     
+def drawDayCalendarDate(app,canvas):
+    dateToWrite=app.today.strftime("%A")
+    date= "{}/{}".format(app.today.month, app.today.day)
+    canvas.create_text(app.width/2,
+        app.borderHeight/2,text=dateToWrite+"\n"+date,fill="black")
+
+
+
+def drawDayCalendarTime(app,canvas):
+    drawWeekCalendarTime(app,canvas)
+    
+
+def drawDayCalendarOutline(app,canvas):
+    canvas.create_rectangle(0+app.borderWidth,0+app.borderHeight,app.width-app.borderWidth,
+    app.height-app.borderHeight,fill="light blue")
+    for i in range (12):
+        canvas.create_rectangle(0+app.borderWidth,app.borderHeight+((app.height-app.borderHeight*2)/12)*i,
+         app.width-app.borderWidth,
+         app.borderHeight+((app.height-app.borderHeight*2)/12)*(i+1)) 
+          
 def drawEvents(app,canvas):
     dict_copy = app.eventDict.copy()
     for key in dict_copy:
@@ -143,9 +174,14 @@ def drawTextBoxes(app,canvas):
         textBox.drawTextBox(app,canvas)
     
 def redrawAll(app,canvas):
-    drawWeekCalendarOutline(app,canvas)
-    drawWeekCalendarTime(app,canvas)
-    drawWeekCalendarDate(app,canvas)
+    if (app.calendarMode=="Week"):
+        drawWeekCalendarOutline(app,canvas)
+        drawWeekCalendarTime(app,canvas)
+        drawWeekCalendarDate(app,canvas)
+    if (app.calendarMode=="Day"):
+        drawDayCalendarOutline(app,canvas)
+        drawDayCalendarTime(app,canvas)
+        drawDayCalendarDate(app,canvas)
     drawEvents(app,canvas)
     drawButtons(app,canvas)
     drawTextBoxes(app,canvas)
@@ -189,9 +225,21 @@ class Event:
         
 
     def mousePressed(self,app,event):
+        
         if (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday):
-            startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
-            endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
+            startXCord=0
+            if (app.calendarMode=="Week"):
+                startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
+            elif (app.calendarMode=="Day"):
+                startXCord=app.borderWidth
+            else: pass
+            endXCord=0
+            if (app.calendarMode=="Week"):
+                endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
+            elif (app.calendarMode=="Day"):
+                endXCord=app.width-app.borderWidth
+            else: pass
+
             startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime)
             endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime)
             if (event.x>=startXCord) and (event.y
@@ -211,9 +259,19 @@ class Event:
        
                     
     def drawEvent(self,app,canvas):
-            if (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday):       
-                startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
-                endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
+            if (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday): 
+                startXCord=0      
+                if (app.calendarMode=="Week"):
+                    startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
+                elif (app.calendarMode=="Day"):
+                    startXCord=app.borderWidth
+                else: pass
+                endXCord=0
+                if (app.calendarMode=="Week"):
+                    endXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*(determineWidthFromDate(self.date)+1)
+                elif (app.calendarMode=="Day"):
+                    endXCord=app.width-app.borderWidth
+                else: pass
                 startYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.startTime)
                 endYCord=app.borderHeight+((app.height-app.borderHeight*2)/12)*(self.endTime)
                 if (app.clickedDeleteEvent==False) and (app.clickedEditEvent==False):
@@ -278,6 +336,22 @@ class Button:
                 app.today=app.today-datetime.timedelta(days=7)
                 app.sunday=app.sunday-datetime.timedelta(days=7)
                 app.saturday=app.saturday-datetime.timedelta(days=7)
+            elif (self.buttonType=="switchMode"):
+                if (app.calendarMode=="Week"):
+                    app.calendarMode="Day"
+                elif (app.calendarMode=="Day"):
+                    app.calendarMode="Week"
+                else: pass
+            elif (self.buttonType=="nextDay"):
+                app.today=app.today+datetime.timedelta(days=1)
+                app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
+                app.saturday = app.sunday + datetime.timedelta(days=6)
+
+            elif (self.buttonType=="prevDay"):
+                app.today=app.today-datetime.timedelta(days=1)
+                app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
+                app.saturday = app.sunday + datetime.timedelta(days=6)
+                
 
                 
             else: pass
