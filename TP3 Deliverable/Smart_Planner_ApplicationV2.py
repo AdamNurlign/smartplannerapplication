@@ -21,28 +21,44 @@ def appStarted(app):
     app.editEventButton=Button(app,"editEvent","editEvent","yellow",7,3,None)
     app.buttonList.append(app.editEventButton)
 
-
-
-
     app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
 
-   
-   
     app.textBoxDict=dict()
     app.textBoxDict["createEventTextBox"]=app.createEventTextBox
 
     app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
     app.textBoxDict["editEventTextBox"]=app.editEventTextBox
 
-
-    
     app.clickedDeleteEvent=False
     app.clickedEditEvent=False
 
-
-
     app.eventToEdit=None
-    
+
+    #https://docs.python.org/3/library/datetime.html
+    app.currentDateString=str(date.today())
+    #2022-12-05
+
+    app.days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+    app.dayOfTheWeekInt=(int(datetime.datetime.today().weekday())+1)
+    app.dayOfTheWeek=app.days[app.dayOfTheWeekInt]
+
+    app.currentYear=int(app.currentDateString[0:4])
+    app.currentDay=int(app.currentDateString[8::])
+
+
+    app.febNumDays=0
+    if (app.currentYear%4==0) and (app.currentYear%100!=0):
+        app.febNumDays=29
+    elif (app.currentYear%400==0):
+        app.febNumDays=29
+    else: 
+        app.febNumDays=28
+
+    app.months=[["January",31],["Febuary",app.febNumDays],["March",31],["April",30],["May",31],["June",30],["July",31],
+            ["August",31],["September",30],["October",31],["November",30],["December",31]]
+    app.monthIndex=int(app.currentDateString[5:7])-1
+    app.currentMonth=app.months[app.monthIndex][0]
+
     
 def convertTime(app,timeString):
     hour,minute=timeString.split(":")
@@ -52,6 +68,16 @@ def convertTime(app,timeString):
     else:
         hour=hour+(12-app.startTime)
     return hour+(float(minute)/60)
+
+def convertDayOfTheWeek(date):
+    if date=="Sunday":return 0
+    elif date=="Monday":return 1
+    elif date=="Tuesday":return 2
+    elif date=="Wednesday":return 3
+    elif date=="Thursday":return 4
+    elif date=="Friday":return 5
+    elif date=="Saturday":return 6
+    else: return 0
 
 def mousePressed(app,event):
     app.borderWidth=app.width/10
@@ -153,7 +179,20 @@ def determineWidthFromDate(date):
     else: 
         return 0
 
-
+def adjustDate(app,dayInt):
+    numDaysCurrMonth=app.months[(app.monthIndex)][1]
+    if (dayInt<=0):
+        numDaysPrevMonth=app.months[(app.monthIndex-1)%12][1]
+        howMuchToSubtract=abs(dayInt)
+        newDay=numDaysPrevMonth-howMuchToSubtract
+        return newDay
+    
+    elif (dayInt>numDaysCurrMonth):
+        #This could potentially need work
+        return dayInt-numDaysCurrMonth
+    else:
+        return dayInt
+        
     
 class Event:
     def __init__(self,app,name,eventType,description,date,startTime,endTime,color):
@@ -166,6 +205,20 @@ class Event:
         self.color=color
 
         self.clickedEventDescription=False
+
+        self.day=adjustDate(app,app.currentDay+convertDayOfTheWeek(date)-convertDayOfTheWeek(app.dayOfTheWeek))
+        self.month=""
+        if (app.currentDay+convertDayOfTheWeek(date)-convertDayOfTheWeek(app.dayOfTheWeek)<=0):
+            self.month=app.months[(app.monthIndex-1)%12][0]
+        elif(app.currentDay+convertDayOfTheWeek(date)-convertDayOfTheWeek(app.dayOfTheWeek)>app.months[(app.monthIndex)][1]):
+            self.month=app.months[(app.monthIndex+1)%12][0]
+        else: self.month=app.currentMonth
+
+        self.year=0
+        if (app.currentMonth=="January") and (app.currentDay+convertDayOfTheWeek(date)-convertDayOfTheWeek(app.dayOfTheWeek)<=0):
+            self.year=app.currentYear-1
+        else:
+            self.year=app.currentYear
 
         
 
