@@ -448,13 +448,15 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
         passTest2=(startTime>=existingEvent.endTime) and (startTime+eventLength>=existingEvent.endTime)
         if  (not passTest1)  and (not passTest2):
             #we have a time conflict
-            if (max(startTime+eventLength,existingEvent.endTime)>convertTime(app,str(app.endTime)+":00")):
+            if (max(startTime+eventLength,existingEvent.endTime)>12):
                 #try event on the next day
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,app.startTime,eventsScheduledList)
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
             else:
                 #try event at a different hour
                 return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,max(startTime+eventLength,existingEvent.endTime),eventsScheduledList)
-        else :
+        elif (max(startTime+eventLength,existingEvent.endTime)>12):
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
+        else:
             continue
     for existingEvent in eventsScheduledList:
         if (existingEvent.dateObject!=currEventDate):
@@ -465,12 +467,14 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
         passTest2=(startTime>=existingEvent.endTime) and (startTime+eventLength>=existingEvent.endTime)
         if  (not passTest1)  and (not passTest2):
             #we have a time conflict
-            if (max(startTime+eventLength,existingEvent.endTime)>convertTime(app,str(app.endTime)+":00")):
+            if (max(startTime+eventLength,existingEvent.endTime)>12):
                 #try event on the next day
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,app.startTime,eventsScheduledList)
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
             else:
                 #try event at a different hour
                 return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,max(startTime+eventLength,existingEvent.endTime),eventsScheduledList)
+        elif (max(startTime+eventLength,existingEvent.endTime)>12):
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
         else :
             continue
 
