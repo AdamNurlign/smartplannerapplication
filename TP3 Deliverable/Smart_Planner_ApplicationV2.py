@@ -9,6 +9,8 @@ def appStarted(app):
     app.borderWidth=app.width/10
     app.borderHeight=app.height/10
     app.startTime=9
+    app.endTime=21
+
 
     app.eventDict={}
 
@@ -30,11 +32,18 @@ def appStarted(app):
     app.nextDayButton=Button(app,"nextDay","nextDay","light coral",7,6,None)
     app.prevDayButton=Button(app,"prevDay","prevDay","dark slate gray",7,7,None)
     app.switchModeButton=Button(app,"switchMode","switchMode","gray",7,8,None)
+
     app.buttonList.append(app.nextDayButton)
     app.buttonList.append(app.prevDayButton)
     app.buttonList.append(app.switchModeButton)
 
-    app.startApplicationButton=Button(app,"start","start","light green",3,10,None)
+
+    
+    app.changeSettingsTextBox=TextBox(app,"changeSettingsTextBox",["What is the earliest time you would like to work? (ex: '8 am')","How many breaks for day would you like?","How long would you like your breaks? (min)"])
+    app.changeSettingsButton=Button(app,"changeSettings","changeSettings","pink",2.5,11,"changeSettingsTextBox")
+    
+    
+    app.startApplicationButton=Button(app,"start","start","light green",3.5,11,None)
 
 
 
@@ -48,7 +57,15 @@ def appStarted(app):
     app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
     app.textBoxDict["editEventTextBox"]=app.editEventTextBox
 
+    app.textBoxDict["changeSettingsTextBox"]=app.changeSettingsTextBox
 
+    app.autoScheduleTextBox=TextBox(app,"autoScheduleTextBox",["Between what days would you like this event to occur (ex: 11/2/2004 to 11/18/2004 )","What days of the week would you like this event to occur on? (ex: 'Sunday,Monday,Tuesday,Friday')","Max instances per day","Number of instances:", "Event length (hrs):"])
+    app.textBoxDict["autoScheduleTextBox"]=app.autoScheduleTextBox
+
+
+    app.autoScheduleButton=Button(app,"autoSchedule","autoSchedule","blue",7,10,"autoScheduleTextBox")
+    app.buttonList.append(app.autoScheduleButton)
+    
     
     app.clickedDeleteEvent=False
     app.clickedEditEvent=False
@@ -63,6 +80,10 @@ def appStarted(app):
     app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
     app.saturday = app.sunday + datetime.timedelta(days=6)
 
+    app.breaksPerDay=0
+    app.breakLength=0
+
+
 
     app.eventToEdit=None
     
@@ -70,15 +91,18 @@ def appStarted(app):
 def convertTime(app,timeString):
     hour,minute=timeString.split(":")
     hour=float(hour)
-    if (hour-9>=0):
+    if (hour-app.startTime>=0):
         hour=hour-app.startTime
     else:
         hour=hour+(12-app.startTime)
     return hour+(float(minute)/60)
 
 def mousePressed(app,event):
+        
+    
     app.borderWidth=app.width/10
     app.borderHeight=app.height/10
+    
 
     dict_copy = app.eventDict.copy()
 
@@ -96,7 +120,9 @@ def mousePressed(app,event):
     
     if (app.calendarMode=="Home"):
         app.startApplicationButton.mousePressed(app,event)
+        app.changeSettingsButton.mousePressed(app,event)
     
+
 
 
 
@@ -108,7 +134,7 @@ def keyPressed(app,event):
 def drawWeekCalendarTime(app,canvas):
     for i in range(12):
         timeSuffix=""
-        if app.startTime+i>=12:
+        if (app.startTime+i)%24>=12:
             timeSuffix="pm"
         else:
             timeSuffix="am"
@@ -185,11 +211,13 @@ def drawHomeScreen(app,canvas):
     canvas.create_text(app.width/2,
     app.height/2,text="Welcome to Smart"+"\n"+"Planner Application!",font="Times 98 bold italic",
     fill="light blue")
+    app.startApplicationButton.drawButton(app,canvas)
+    app.changeSettingsButton.drawButton(app,canvas)
 
 def redrawAll(app,canvas):
     if (app.calendarMode=="Home"):
         drawHomeScreen(app,canvas)
-        app.startApplicationButton.drawButton(app,canvas)
+        drawTextBoxes(app,canvas)
         return
     elif (app.calendarMode=="Week"):
         drawWeekCalendarOutline(app,canvas)
@@ -375,6 +403,8 @@ class Button:
             
             elif (self.buttonType=="start"):
                 app.calendarMode="Week"
+           
+
                 
 
                 
@@ -397,6 +427,63 @@ class Button:
         textY=((app.borderHeight+(self.yPos*((app.height-2*app.borderHeight)/12)))+(app.borderHeight+((self.yPos+1)*((app.height-2*app.borderHeight)/12))))/2
         canvas.create_text(textX,
                             textY,text=self.name,fill="black")
+
+
+def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,eventsScheduledList):
+    if (numInstances==0):
+        return eventsScheduledList
+    if (currEventDate>maxDateObject):
+        #this is our failure case that we are trying to find an event after specified range
+        return None
+    
+    
+       
+    for (eventName,existingEvent) in app.eventDict.items():
+        if (existingEvent.dateObject!=currEventDate):
+            #no conflicts with scheduled event on a different day
+            print("we should not ever continue")
+            continue
+            #Now we have to check the exent times
+        passTest1=(startTime<=existingEvent.startTime) and (startTime+eventLength<=existingEvent.startTime)
+        passTest2=(startTime>=existingEvent.endTime) and (startTime+eventLength>=existingEvent.endTime)
+        if  (not passTest1)  and (not passTest2):
+            #we have a time conflict
+            if (max(startTime+eventLength,existingEvent.endTime)>convertTime(app,str(app.endTime)+":00")):
+                #try event on the next day
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,app.startTime,eventsScheduledList)
+            else:
+                #try event at a different hour
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,max(startTime+eventLength,existingEvent.endTime),eventsScheduledList)
+        else :
+            continue
+    for existingEvent in eventsScheduledList:
+        if (existingEvent.dateObject!=currEventDate):
+            #no conflicts with scheduled event on a different day
+            continue
+            #Now we have to check the exent times
+        passTest1=(startTime<=existingEvent.startTime) and (startTime+eventLength<=existingEvent.startTime)
+        passTest2=(startTime>=existingEvent.endTime) and (startTime+eventLength>=existingEvent.endTime)
+        if  (not passTest1)  and (not passTest2):
+            #we have a time conflict
+            if (max(startTime+eventLength,existingEvent.endTime)>convertTime(app,str(app.endTime)+":00")):
+                #try event on the next day
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,app.startTime,eventsScheduledList)
+            else:
+                #try event at a different hour
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,max(startTime+eventLength,existingEvent.endTime),eventsScheduledList)
+        else :
+            continue
+
+    i=0
+  
+    while(( ("generatedEvent"+str(i)) in app.eventDict)==True):
+        i+=1
+    eventToAdd=Event(app,"generatedEvent"+str(len(eventsScheduledList)+i),"generatedEvent","default description",
+                     currEventDate.strftime("%A"),startTime,startTime+eventLength,"light green")
+    eventToAdd.dateObject=currEventDate
+    newList=eventsScheduledList
+    newList.append(eventToAdd)
+    return autoScheduleEvents(app,numInstances-1,maxDateObject,currEventDate,eventLength,startTime+eventLength,newList)
         
 
 class TextBox:
@@ -502,6 +589,45 @@ class TextBox:
             app.eventToEdit=None
             for i in range(len(self.answers)):
                         self.answers[i]=""
+        elif (self.name=="changeSettingsTextBox") and (app.changeSettingsTextBox.clicked==True):
+            startTime=self.answers[0]
+            time,suffix=startTime.split(" ")
+            if suffix=="am":
+                app.startTime=int(time)%12
+            else:
+                app.startTime=int(time)+12
+            app.breaksPerDay=int(self.answers[1])
+            app.breakLength=int(self.answers[2])
+            app.endTime=app.startTime+12
+        
+        elif (self.name=="autoScheduleTextBox") and (app.autoScheduleTextBox.clicked==True):
+            #11/2/2004 to 11/18/2004
+            rangeOfDatesString=self.answers[0]
+            daysOfTheWeekString=self.answers[1]
+            maxInstancesPerDay=int(self.answers[2])
+            numInstances=int(self.answers[3])
+            eventLength=float(self.answers[4])
+
+            rangeOfDatesStringSplit=rangeOfDatesString.split()
+            minDateString=rangeOfDatesStringSplit[0]
+            maxDateString=rangeOfDatesStringSplit[2]
+
+            minDateObject=datetime.datetime.strptime(minDateString, "%m/%d/%Y").date()
+            maxDateObject=datetime.datetime.strptime(maxDateString, "%m/%d/%Y").date()
+            
+
+            #(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,eventsScheduledList)
+            eventsToAddList=autoScheduleEvents(app,numInstances,maxDateObject,minDateObject,eventLength,0.0,[])
+            
+            if (eventsToAddList==None):
+                print("failure to autoschedule events")
+            else:
+                for j in range(len(eventsToAddList)):
+                    app.eventDict[eventsToAddList[j].name]=eventsToAddList[j]
+                
+
+
+
    
 
 runApp(width=1000,height=600)
