@@ -97,6 +97,15 @@ def appStarted(app):
 
 
     app.eventToEdit=None
+
+    app.messagePopUpDict=dict()
+
+    app.failAutoSchedulePopUp=MessagePopUp(app,"failAutoSchedule","Failed to schedule events due to your settings and planned events. Please try again.")
+
+    
+    app.messagePopUpDict["failAutoSchedule"]=app.failAutoSchedulePopUp
+
+
     
     
 def convertTime(app,timeString):
@@ -128,6 +137,9 @@ def mousePressed(app,event):
         textBox.mousePressed(app,event)
         textBox.closeButton.mousePressed(app,event)
         textBox.enterButton.mousePressed(app,event)
+    
+    for (messagePopUpName,messagePopUp) in app.messagePopUpDict.items():
+        messagePopUp.mousePressed(app,event)
     
     if (app.calendarMode=="Home"):
         app.startApplicationButton.mousePressed(app,event)
@@ -217,6 +229,10 @@ def drawTextBoxes(app,canvas):
     for (textBoxName,textBox) in (app.textBoxDict.items()):
         textBox.drawTextBox(app,canvas)
 
+def drawMessagePopUps(app,canvas):
+    for (messagePopUpName,messagePopUp) in app.messagePopUpDict.items():
+        messagePopUp.drawMessagePopUp(app,canvas)  
+
 def drawHomeScreen(app,canvas):
     canvas.create_rectangle(0,0,app.width,app.height,fill="light yellow")
     canvas.create_text(app.width/2,
@@ -243,6 +259,7 @@ def redrawAll(app,canvas):
     drawEvents(app,canvas)
     drawButtons(app,canvas)
     drawTextBoxes(app,canvas)
+    drawMessagePopUps(app,canvas)
 
 #These are some helper functions to help us draw date
 
@@ -264,8 +281,71 @@ def determineWidthFromDate(date):
     else: 
         return 0
 
+def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList):
+    breakLengthHours=float(app.breakLength/60)
+    if (numInstances==0):
+        return eventsScheduledList
+    if (currEventDate>maxDateObject):
+        #this is our failure case that we are trying to find an event after specified range
+        return None
+    if (dayInstancesRemaining==0):
+        return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
 
-    
+    if (not(currEventDate.strftime('%A') in  validDaysList)):
+       return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+        
+
+    for (eventName,existingEvent) in app.eventDict.items():
+        if (existingEvent.dateObject!=currEventDate):
+            #no conflicts with scheduled event on a different day
+            continue
+            #Now we have to check the exent times
+        passTest1=(startTime<=existingEvent.startTime-breakLengthHours) and (startTime+eventLength<=existingEvent.startTime-breakLengthHours)
+        passTest2=(startTime>=existingEvent.endTime+breakLengthHours) and (startTime+eventLength>=existingEvent.endTime+breakLengthHours)
+        if  (not passTest1)  and (not passTest2):
+            #we have a time conflict
+            if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
+                #try event on the next day
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+            else:
+                #try event at a different hour
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList)
+        elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
+                autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+        else:
+            continue
+    for existingEvent in eventsScheduledList:
+        if (existingEvent.dateObject!=currEventDate):
+            #no conflicts with scheduled event on a different day
+            continue
+            #Now we have to check the exent times
+        passTest1=(startTime<=existingEvent.startTime-breakLengthHours) and (startTime+eventLength<=existingEvent.startTime-breakLengthHours)
+        passTest2=(startTime>=existingEvent.endTime+breakLengthHours) and (startTime+eventLength>=existingEvent.endTime+breakLengthHours)
+        if  (not passTest1)  and (not passTest2):
+            #we have a time conflict
+            if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
+                #try event on the next day
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+            else:
+                #try event at a different hour
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList)
+        elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
+                autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+        else:
+            continue
+
+    i=0
+  
+    while(( ("generatedEvent"+str(i)) in app.eventDict)==True):
+        i+=1
+    eventToAdd=Event(app,"generatedEvent"+str(len(eventsScheduledList)+i),"generatedEvent","default description",
+                     currEventDate.strftime("%A"),startTime,startTime+eventLength,"light green")
+    eventToAdd.dateObject=currEventDate
+    newList=eventsScheduledList
+    newList.append(eventToAdd)
+    return autoScheduleEvents(app,numInstances-1,maxDateObject,currEventDate,eventLength,startTime+eventLength+breakLengthHours,dayInstancesRemaining-1,maxDayInstances,validDaysList,newList)
+
+
 class Event:
     def __init__(self,app,name,eventType,description,date,startTime,endTime,color):
         self.name=name
@@ -441,75 +521,24 @@ class Button:
         canvas.create_text(textX,
                             textY,text=self.name,fill="black")
 
+       
+class MessagePopUp:
+    def __init__(self,app,name,message):
+        self.name=name
+        self.message=message
+        self.activated=False
 
-def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList):
-    breakLengthHours=float(app.breakLength/60)
-
-
-
-    if (numInstances==0):
-        return eventsScheduledList
-    if (currEventDate>maxDateObject):
-        #this is our failure case that we are trying to find an event after specified range
-        return None
-    if (dayInstancesRemaining==0):
-        return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
-
-    if (not(currEventDate.strftime('%A') in  validDaysList)):
-       return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
-        
-
-    for (eventName,existingEvent) in app.eventDict.items():
-        if (existingEvent.dateObject!=currEventDate):
-            #no conflicts with scheduled event on a different day
-            continue
-            #Now we have to check the exent times
-        passTest1=(startTime<=existingEvent.startTime-breakLengthHours) and (startTime+eventLength<=existingEvent.startTime-breakLengthHours)
-        passTest2=(startTime>=existingEvent.endTime+breakLengthHours) and (startTime+eventLength>=existingEvent.endTime+breakLengthHours)
-        if  (not passTest1)  and (not passTest2):
-            #we have a time conflict
-            if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
-                #try event on the next day
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
-            else:
-                #try event at a different hour
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList)
-        elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
-                autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
-        else:
-            continue
-    for existingEvent in eventsScheduledList:
-        if (existingEvent.dateObject!=currEventDate):
-            #no conflicts with scheduled event on a different day
-            continue
-            #Now we have to check the exent times
-        passTest1=(startTime<=existingEvent.startTime-breakLengthHours) and (startTime+eventLength<=existingEvent.startTime-breakLengthHours)
-        passTest2=(startTime>=existingEvent.endTime+breakLengthHours) and (startTime+eventLength>=existingEvent.endTime+breakLengthHours)
-        if  (not passTest1)  and (not passTest2):
-            #we have a time conflict
-            if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
-                #try event on the next day
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
-            else:
-                #try event at a different hour
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList)
-        elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
-                autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
-        else:
-            continue
-
-    i=0
-  
-    while(( ("generatedEvent"+str(i)) in app.eventDict)==True):
-        i+=1
-    eventToAdd=Event(app,"generatedEvent"+str(len(eventsScheduledList)+i),"generatedEvent","default description",
-                     currEventDate.strftime("%A"),startTime,startTime+eventLength,"light green")
-    eventToAdd.dateObject=currEventDate
-    newList=eventsScheduledList
-    newList.append(eventToAdd)
-    return autoScheduleEvents(app,numInstances-1,maxDateObject,currEventDate,eventLength,startTime+eventLength+breakLengthHours,dayInstancesRemaining-1,maxDayInstances,validDaysList,newList)
-        
-
+    def mousePressed(self,app,event):
+        if (self.activated==True):
+            if (event.x>=0.25*app.width) and (event.y>=0.25*app.height) and (event.x<=0.75*app.width) and (event.y<=0.75*app.height):
+                self.activated=False
+                
+    def drawMessagePopUp(self,app,canvas):
+        if (self.activated==True):
+            canvas.create_rectangle(0.25*app.width,0.25*app.height,0.75*app.width,0.75*app.height,
+            fill="light yellow")
+            canvas.create_text(0.5*app.width,0.5*app.height,text=self.message,fill="black")
+            
 class TextBox:
     def __init__(self,app,name,questions):
         self.name=name
@@ -650,7 +679,7 @@ class TextBox:
             eventsToAddList=autoScheduleEvents(app,numInstances,maxDateObject,minDateObject,eventLength,0.0,maxInstancesPerDay,maxInstancesPerDay,validDaysList,[])
             
             if (eventsToAddList==None):
-                print("failure to autoschedule events")
+                app.failAutoSchedulePopUp.activated=True
             else:
                 for j in range(len(eventsToAddList)):
                     app.eventDict[eventsToAddList[j].name]=eventsToAddList[j]
@@ -670,6 +699,11 @@ class TextBox:
             
 
                 
+
+    
+
+
+
 
 
 
