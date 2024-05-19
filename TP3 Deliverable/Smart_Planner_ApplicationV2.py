@@ -102,6 +102,7 @@ def appStarted(app):
 
     app.failAutoSchedulePopUp=MessagePopUp(app,"failAutoSchedule","Failed to schedule events due to your settings and planned events. Please try again.")
 
+
     
     app.messagePopUpDict["failAutoSchedule"]=app.failAutoSchedulePopUp
 
@@ -338,6 +339,7 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
   
     while(( ("generatedEvent"+str(i)) in app.eventDict)==True):
         i+=1
+    
     eventToAdd=Event(app,"generatedEvent"+str(len(eventsScheduledList)+i),"generatedEvent","default description",
                      currEventDate.strftime("%A"),startTime,startTime+eventLength,"light green")
     eventToAdd.dateObject=currEventDate
@@ -345,7 +347,16 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
     newList.append(eventToAdd)
     return autoScheduleEvents(app,numInstances-1,maxDateObject,currEventDate,eventLength,startTime+eventLength+breakLengthHours,dayInstancesRemaining-1,maxDayInstances,validDaysList,newList)
 
-
+def violatesConstraints(app,startTime,endTime,eventDate):
+    for (eventName,existingEvent) in app.eventDict.items():
+        if (eventDate!=existingEvent.dateObject):
+            continue
+        if endTime+(app.breakLength/60)>existingEvent.startTime:
+            return True
+        elif startTime-(app.breakLength/60)<existingEvent.endTime:
+            return True
+    return False
+        
 class Event:
     def __init__(self,app,name,eventType,description,date,startTime,endTime,color):
         self.name=name
@@ -618,9 +629,15 @@ class TextBox:
             date=self.answers[2]
             name=self.answers[3]
             description=self.answers[4]
-            #(self,app,name,eventType,description,date,startTime,endTime,color)
-            newEvent=Event(app,name,"newEvent",description,date,time1,time2,"light green")
-            app.eventDict[name]=newEvent
+            
+            dateObject=app.sunday+datetime.timedelta(days=determineWidthFromDate(date)) 
+
+            
+            if violatesConstraints(app,time1,time2,dateObject):
+                app.failAutoSchedulePopUp.activated=True
+            else:
+                newEvent=Event(app,name,"newEvent",description,date,time1,time2,"light green")
+                app.eventDict[name]=newEvent
             for i in range(len(self.answers)):
                         self.answers[i]=""
 
