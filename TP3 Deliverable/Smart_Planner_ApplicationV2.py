@@ -67,6 +67,13 @@ def appStarted(app):
     app.buttonList.append(app.autoScheduleButton)
 
 
+    app.jumpToTextBox=TextBox(app,"jumpToTextBox",["What day would you like to jump to? (MM/DD/YYYY)"])
+    app.textBoxDict["jumpToTextBox"]=app.jumpToTextBox
+
+    
+    app.jumpToButton=Button(app,"jumpTo","jumpTo","white",7,9,"jumpToTextBox")
+    app.buttonList.append(app.jumpToButton)
+
     app.homeButton=Button(app,"home","home","light pink",7,-1.5,None)
     app.buttonList.append(app.homeButton)
 
@@ -649,6 +656,17 @@ class TextBox:
                     app.eventDict[eventsToAddList[j].name]=eventsToAddList[j]
             for i in range(len(self.answers)):
                         self.answers[i]=""
+
+        elif (self.name=="jumpToTextBox") and (app.jumpToTextBox.clicked==True):
+            jumpToDate=self.answers[0]
+            app.today=datetime.datetime.strptime(jumpToDate, "%m/%d/%Y").date()
+            app.currentWeekDay = app.today.weekday()
+            app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
+            app.saturday = app.sunday + datetime.timedelta(days=6)
+            
+            for i in range(len(self.answers)):
+                        self.answers[i]=""
+
             
 
                 
