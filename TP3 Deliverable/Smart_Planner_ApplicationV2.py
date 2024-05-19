@@ -81,7 +81,7 @@ def appStarted(app):
     app.saturday = app.sunday + datetime.timedelta(days=6)
 
     app.breaksPerDay=0
-    app.breakLength=0
+    app.breakLength=30
 
 
 
@@ -430,6 +430,7 @@ class Button:
 
 
 def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,eventsScheduledList):
+    breakLengthHours=float(app.breakLength/60)
     if (numInstances==0):
         return eventsScheduledList
     if (currEventDate>maxDateObject):
@@ -441,20 +442,19 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
     for (eventName,existingEvent) in app.eventDict.items():
         if (existingEvent.dateObject!=currEventDate):
             #no conflicts with scheduled event on a different day
-            print("we should not ever continue")
             continue
             #Now we have to check the exent times
-        passTest1=(startTime<=existingEvent.startTime) and (startTime+eventLength<=existingEvent.startTime)
-        passTest2=(startTime>=existingEvent.endTime) and (startTime+eventLength>=existingEvent.endTime)
+        passTest1=(startTime<=existingEvent.startTime-breakLengthHours) and (startTime+eventLength<=existingEvent.startTime-breakLengthHours)
+        passTest2=(startTime>=existingEvent.endTime+breakLengthHours) and (startTime+eventLength>=existingEvent.endTime+breakLengthHours)
         if  (not passTest1)  and (not passTest2):
             #we have a time conflict
-            if (max(startTime+eventLength,existingEvent.endTime)>12):
+            if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
                 #try event on the next day
                 return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
             else:
                 #try event at a different hour
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,max(startTime+eventLength,existingEvent.endTime),eventsScheduledList)
-        elif (max(startTime+eventLength,existingEvent.endTime)>12):
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,eventsScheduledList)
+        elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
                 return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
         else:
             continue
@@ -463,17 +463,17 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
             #no conflicts with scheduled event on a different day
             continue
             #Now we have to check the exent times
-        passTest1=(startTime<=existingEvent.startTime) and (startTime+eventLength<=existingEvent.startTime)
-        passTest2=(startTime>=existingEvent.endTime) and (startTime+eventLength>=existingEvent.endTime)
+        passTest1=(startTime<=existingEvent.startTime-breakLengthHours) and (startTime+eventLength<=existingEvent.startTime-breakLengthHours)
+        passTest2=(startTime>=existingEvent.endTime+breakLengthHours) and (startTime+eventLength>=existingEvent.endTime+breakLengthHours)
         if  (not passTest1)  and (not passTest2):
             #we have a time conflict
-            if (max(startTime+eventLength,existingEvent.endTime)>12):
+            if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
                 #try event on the next day
                 return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
             else:
                 #try event at a different hour
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,max(startTime+eventLength,existingEvent.endTime),eventsScheduledList)
-        elif (max(startTime+eventLength,existingEvent.endTime)>12):
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,eventsScheduledList)
+        elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
                 return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
         else :
             continue
@@ -620,7 +620,7 @@ class TextBox:
             maxDateObject=datetime.datetime.strptime(maxDateString, "%m/%d/%Y").date()
             
 
-            #(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,eventsScheduledList)
+            #(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,breakLength,eventsScheduledList)
             eventsToAddList=autoScheduleEvents(app,numInstances,maxDateObject,minDateObject,eventLength,0.0,[])
             
             if (eventsToAddList==None):
