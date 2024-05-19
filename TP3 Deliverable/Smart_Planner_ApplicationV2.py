@@ -39,7 +39,7 @@ def appStarted(app):
 
 
     
-    app.changeSettingsTextBox=TextBox(app,"changeSettingsTextBox",["What is the earliest time you would like to work? (ex: '8 am')","How many breaks for day would you like?","How long would you like your breaks? (min)"])
+    app.changeSettingsTextBox=TextBox(app,"changeSettingsTextBox",["What is the earliest time you would like to work? (ex: '8 am')","How long would you like your breaks? (min)"])
     app.changeSettingsButton=Button(app,"changeSettings","changeSettings","pink",2.5,11,"changeSettingsTextBox")
     
     
@@ -65,6 +65,11 @@ def appStarted(app):
 
     app.autoScheduleButton=Button(app,"autoSchedule","autoSchedule","blue",7,10,"autoScheduleTextBox")
     app.buttonList.append(app.autoScheduleButton)
+
+
+    app.homeButton=Button(app,"home","home","light pink",7,-1.5,None)
+    app.buttonList.append(app.homeButton)
+
     
     
     app.clickedDeleteEvent=False
@@ -80,7 +85,6 @@ def appStarted(app):
     app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
     app.saturday = app.sunday + datetime.timedelta(days=6)
 
-    app.breaksPerDay=0
     app.breakLength=30
 
 
@@ -403,6 +407,8 @@ class Button:
             
             elif (self.buttonType=="start"):
                 app.calendarMode="Week"
+            elif (self.buttonType=="home"):
+                app.calendarMode="Home"
            
 
                 
@@ -429,16 +435,23 @@ class Button:
                             textY,text=self.name,fill="black")
 
 
-def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,eventsScheduledList):
+def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList):
     breakLengthHours=float(app.breakLength/60)
+
+
+
     if (numInstances==0):
         return eventsScheduledList
     if (currEventDate>maxDateObject):
         #this is our failure case that we are trying to find an event after specified range
         return None
-    
-    
-       
+    if (dayInstancesRemaining==0):
+        return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+
+    if (not(currEventDate.strftime('%A') in  validDaysList)):
+       return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+        
+
     for (eventName,existingEvent) in app.eventDict.items():
         if (existingEvent.dateObject!=currEventDate):
             #no conflicts with scheduled event on a different day
@@ -450,12 +463,12 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
             #we have a time conflict
             if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
                 #try event on the next day
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
             else:
                 #try event at a different hour
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,eventsScheduledList)
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList)
         elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
+                autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
         else:
             continue
     for existingEvent in eventsScheduledList:
@@ -469,13 +482,13 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
             #we have a time conflict
             if (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
                 #try event on the next day
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
             else:
                 #try event at a different hour
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,eventsScheduledList)
+                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,existingEvent.endTime+breakLengthHours,dayInstancesRemaining,maxDayInstances,validDaysList,eventsScheduledList)
         elif (max(startTime+eventLength,existingEvent.endTime+breakLengthHours)>12):
-                return autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,eventsScheduledList)
-        else :
+                autoScheduleEvents(app,numInstances,maxDateObject,currEventDate + datetime.timedelta(days=1),eventLength,0,maxDayInstances,maxDayInstances,validDaysList,eventsScheduledList)
+        else:
             continue
 
     i=0
@@ -487,7 +500,7 @@ def autoScheduleEvents(app,numInstances,maxDateObject,currEventDate,eventLength,
     eventToAdd.dateObject=currEventDate
     newList=eventsScheduledList
     newList.append(eventToAdd)
-    return autoScheduleEvents(app,numInstances-1,maxDateObject,currEventDate,eventLength,startTime+eventLength,newList)
+    return autoScheduleEvents(app,numInstances-1,maxDateObject,currEventDate,eventLength,startTime+eventLength+breakLengthHours,dayInstancesRemaining-1,maxDayInstances,validDaysList,newList)
         
 
 class TextBox:
@@ -600,14 +613,20 @@ class TextBox:
                 app.startTime=int(time)%12
             else:
                 app.startTime=int(time)+12
-            app.breaksPerDay=int(self.answers[1])
-            app.breakLength=int(self.answers[2])
+            app.breakLength=int(self.answers[1])
             app.endTime=app.startTime+12
+            for i in range(len(self.answers)):
+                        self.answers[i]=""
         
         elif (self.name=="autoScheduleTextBox") and (app.autoScheduleTextBox.clicked==True):
             #11/2/2004 to 11/18/2004
             rangeOfDatesString=self.answers[0]
             daysOfTheWeekString=self.answers[1]
+
+            validDaysList = daysOfTheWeekString.split(',')
+
+
+
             maxInstancesPerDay=int(self.answers[2])
             numInstances=int(self.answers[3])
             eventLength=float(self.answers[4])
@@ -621,13 +640,17 @@ class TextBox:
             
 
             #(app,numInstances,maxDateObject,currEventDate,eventLength,startTime,breakLength,eventsScheduledList)
-            eventsToAddList=autoScheduleEvents(app,numInstances,maxDateObject,minDateObject,eventLength,0.0,[])
+            eventsToAddList=autoScheduleEvents(app,numInstances,maxDateObject,minDateObject,eventLength,0.0,maxInstancesPerDay,maxInstancesPerDay,validDaysList,[])
             
             if (eventsToAddList==None):
                 print("failure to autoschedule events")
             else:
                 for j in range(len(eventsToAddList)):
                     app.eventDict[eventsToAddList[j].name]=eventsToAddList[j]
+            for i in range(len(self.answers)):
+                        self.answers[i]=""
+            
+
                 
 
 
