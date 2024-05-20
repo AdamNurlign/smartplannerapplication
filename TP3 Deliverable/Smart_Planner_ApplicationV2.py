@@ -359,9 +359,9 @@ def violatesConstraints(app,startTime,endTime,eventDate):
         count+=1
         if(count==app.numEventsPerDay):
             return True
-        if endTime+(app.breakLength/60)>existingEvent.startTime:
+        if (endTime+(app.breakLength/60)>existingEvent.startTime) and (startTime<existingEvent.startTime):
             return True
-        elif startTime-(app.breakLength/60)<existingEvent.endTime:
+        elif startTime-(app.breakLength/60)<existingEvent.endTime and (startTime>existingEvent.startTime):
             return True
     return False
         
@@ -380,9 +380,7 @@ class Event:
         self.dateObject=app.sunday+datetime.timedelta(days=determineWidthFromDate(date)) 
 
         
-
     def mousePressed(self,app,event):
-        
         if (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday):
             startXCord=0
             if (app.calendarMode=="Week"):
