@@ -414,7 +414,9 @@ class Event:
        
                     
     def drawEvent(self,app,canvas):
-            if (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday): 
+            validToDrawWeek=(app.calendarMode=="Week") and (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday)
+            validToDrawDay=(app.calendarMode=="Day") and (self.dateObject==app.today)
+            if (validToDrawWeek or validToDrawDay): 
                 startXCord=0      
                 if (app.calendarMode=="Week"):
                     startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
