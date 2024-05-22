@@ -74,7 +74,7 @@ def appStarted(app):
     app.jumpToButton=Button(app,"jumpTo","jumpTo","white",7,9,"jumpToTextBox")
     app.buttonList.append(app.jumpToButton)
 
-    app.homeButton=Button(app,"home","home","light pink",7,-1.5,None)
+    app.homeButton=Button(app,"home","home","light pink",7,11,None)
     app.buttonList.append(app.homeButton)
 
     
