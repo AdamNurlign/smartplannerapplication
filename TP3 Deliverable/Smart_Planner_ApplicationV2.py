@@ -10,75 +10,48 @@ def appStarted(app):
     app.borderHeight=app.height/10
     app.startTime=9
     app.endTime=21
-
-
+        
     app.eventDict={}
-
     app.buttonList=[]
+    app.textBoxDict=dict()
+
+
     app.deleteButton=Button(app,"Delete","Delete","red",7,1,None)
-    app.buttonList.append(app.deleteButton)
-
     app.createEventButton=Button(app,"createEvent","createEvent","light green",7,2,"createEventTextBox")
-    app.buttonList.append(app.createEventButton)
-
     app.editEventButton=Button(app,"editEvent","editEvent","yellow",7,3,None)
-    app.buttonList.append(app.editEventButton)
-
     app.nextWeekButton=Button(app,"nextWeek","nextWeek","light blue",7,4,None)
     app.prevWeekButton=Button(app,"prevWeek","prevWeek","pink",7,5,None)
-    app.buttonList.append(app.nextWeekButton)
-    app.buttonList.append(app.prevWeekButton)
-
     app.nextDayButton=Button(app,"nextDay","nextDay","light coral",7,6,None)
     app.prevDayButton=Button(app,"prevDay","prevDay","dark slate gray",7,7,None)
     app.switchModeButton=Button(app,"switchMode","switchMode","gray",7,8,None)
-
-    app.buttonList.append(app.nextDayButton)
-    app.buttonList.append(app.prevDayButton)
-    app.buttonList.append(app.switchModeButton)
-
-
-    
-    app.changeSettingsTextBox=TextBox(app,"changeSettingsTextBox",["What is the earliest time you would like to work? (ex: '8 am')","How long would you like your breaks? (min)","Max # of events per day: "])
     app.changeSettingsButton=Button(app,"changeSettings","changeSettings","pink",2.5,11,"changeSettingsTextBox")
-    
-    
     app.startApplicationButton=Button(app,"start","start","light green",3.5,11,None)
-
-
-
-    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
-
-   
-   
-    app.textBoxDict=dict()
-    app.textBoxDict["createEventTextBox"]=app.createEventTextBox
- 
-    app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
-    app.textBoxDict["editEventTextBox"]=app.editEventTextBox
-
-    app.textBoxDict["changeSettingsTextBox"]=app.changeSettingsTextBox
-
-    app.autoScheduleTextBox=TextBox(app,"autoScheduleTextBox",["Between what days would you like this event to occur (ex: 11/2/2004 to 11/18/2004 )","What days of the week would you like this event to occur on? (ex: 'Sunday,Monday,Tuesday,Friday')","Max instances per day","Number of instances:", "Event length (hrs):"])
-    app.textBoxDict["autoScheduleTextBox"]=app.autoScheduleTextBox
-
-
     app.autoScheduleButton=Button(app,"autoSchedule","autoSchedule","blue",7,10,"autoScheduleTextBox")
-    app.buttonList.append(app.autoScheduleButton)
+    app.jumpToButton=Button(app,"jumpTo","jumpTo","white",7,9,"jumpToTextBox")
+    app.homeButton=Button(app,"home","home","light pink",7,11,None)
+
+    app.buttonList+=[app.deleteButton,app.createEventButton,app.editEventButton,
+    app.nextWeekButton,app.prevWeekButton,app.nextDayButton,app.prevDayButton,
+    app.switchModeButton,app.autoScheduleButton,app.jumpToButton,app.homeButton]
 
 
+    app.changeSettingsTextBox=TextBox(app,"changeSettingsTextBox",["What is the earliest time you would like to work? (ex: '8 am')","How long would you like your breaks? (min)","Max # of events per day: "])
+    app.createEventTextBox=TextBox(app,"createEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
+    app.editEventTextBox=TextBox(app,"editEventTextBox",["What time does your event start? (ex:9:16)","What time does your event end? (ex:9:16)","What day is your event on?","What is the name of the event?","Event Description:"])
+    app.autoScheduleTextBox=TextBox(app,"autoScheduleTextBox",["Between what days would you like this event to occur (ex: 11/2/2004 to 11/18/2004 )","What days of the week would you like this event to occur on? (ex: 'Sunday,Monday,Tuesday,Friday')","Max instances per day","Number of instances:", "Event length (hrs):"])
     app.jumpToTextBox=TextBox(app,"jumpToTextBox",["What day would you like to jump to? (MM/DD/YYYY)"])
+
+    app.textBoxDict["createEventTextBox"]=app.createEventTextBox
+    app.textBoxDict["editEventTextBox"]=app.editEventTextBox
+    app.textBoxDict["changeSettingsTextBox"]=app.changeSettingsTextBox
+    app.textBoxDict["autoScheduleTextBox"]=app.autoScheduleTextBox
     app.textBoxDict["jumpToTextBox"]=app.jumpToTextBox
 
-    
-    app.jumpToButton=Button(app,"jumpTo","jumpTo","white",7,9,"jumpToTextBox")
-    app.buttonList.append(app.jumpToButton)
 
-    app.homeButton=Button(app,"home","home","light pink",7,11,None)
-    app.buttonList.append(app.homeButton)
+    app.messagePopUpDict=dict()
+    app.failAutoSchedulePopUp=MessagePopUp(app,"failAutoSchedule","Failed to schedule events due to your settings and planned events. Please try again.")
+    app.messagePopUpDict["failAutoSchedule"]=app.failAutoSchedulePopUp
 
-    
-    
     app.clickedDeleteEvent=False
     app.clickedEditEvent=False
 
@@ -92,21 +65,13 @@ def appStarted(app):
     app.sunday = app.today - datetime.timedelta(days=(app.currentWeekDay + 1)%7)
     app.saturday = app.sunday + datetime.timedelta(days=6)
 
+    #By default the # of breaks per day is equal to 0 and can have unlimited 
+    #number of events each day
     app.breakLength=0
-
     app.numEventsPerDay=100000000
 
 
     app.eventToEdit=None
-
-    app.messagePopUpDict=dict()
-
-    app.failAutoSchedulePopUp=MessagePopUp(app,"failAutoSchedule","Failed to schedule events due to your settings and planned events. Please try again.")
-
-
-    
-    app.messagePopUpDict["failAutoSchedule"]=app.failAutoSchedulePopUp
-
 
     
     
@@ -125,12 +90,8 @@ def convertTime(app,timeString):
     return hour+(float(minute)/60)
 
 def mousePressed(app,event):
-        
-    
     app.borderWidth=app.width/10
     app.borderHeight=app.height/10
-    
-
     dict_copy = app.eventDict.copy()
 
     for key in dict_copy:
@@ -138,7 +99,6 @@ def mousePressed(app,event):
 
     for button in app.buttonList:
         button.mousePressed(app,event)
-
 
     for (textBoxName,textBox) in app.textBoxDict.items():
         textBox.mousePressed(app,event)
@@ -184,10 +144,6 @@ def drawWeekCalendarDate(app,canvas):
         canvas.create_text(app.borderWidth+((app.width-app.borderWidth*2)/7)*((2*i+1)/2),
         app.borderHeight/2,text=daysOfTheWeek[i]+"\n"+date,fill="black")
     
-
-    
-                
-
 def drawWeekCalendarOutline(app,canvas):
     canvas.create_rectangle(0+app.borderWidth,0+app.borderHeight,app.width-app.borderWidth,
     app.height-app.borderHeight,fill="light blue")
@@ -208,12 +164,9 @@ def drawDayCalendarDate(app,canvas):
     canvas.create_text(app.width/2,
         app.borderHeight/2,text=dateToWrite+"\n"+date,fill="black")
 
-
-
 def drawDayCalendarTime(app,canvas):
     drawWeekCalendarTime(app,canvas)
     
-
 def drawDayCalendarOutline(app,canvas):
     canvas.create_rectangle(0+app.borderWidth,0+app.borderHeight,app.width-app.borderWidth,
     app.height-app.borderHeight,fill="light blue")
@@ -267,8 +220,6 @@ def redrawAll(app,canvas):
     drawButtons(app,canvas)
     drawTextBoxes(app,canvas)
     drawMessagePopUps(app,canvas)
-
-#These are some helper functions to help us draw date
 
 def determineWidthFromDate(date):
     if date=="Sunday":
