@@ -111,7 +111,12 @@ def appStarted(app):
     
     
 def convertTime(app,timeString):
-    hour,minute=timeString.split(":")
+    hour=""
+    minute=""
+    if (len(timeString.split(":"))!=2):
+        return None
+    else:
+        hour,minute=timeString.split(":")
     hour=float(hour)
     if (hour-app.startTime>=0):
         hour=hour-app.startTime
@@ -416,7 +421,8 @@ class Event:
     def drawEvent(self,app,canvas):
             validToDrawWeek=(app.calendarMode=="Week") and (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday)
             validToDrawDay=(app.calendarMode=="Day") and (self.dateObject==app.today)
-            if (validToDrawWeek or validToDrawDay): 
+            validTime= (self.startTime>=convertTime(app,str(app.startTime)+":00") and self.endTime<=convertTime(app,str(app.endTime)+":00"))
+            if (validToDrawWeek or validToDrawDay) and (validTime): 
                 startXCord=0      
                 if (app.calendarMode=="Week"):
                     startXCord=app.borderWidth+((app.width-app.borderWidth*2)/7)*determineWidthFromDate(self.date)
@@ -602,6 +608,8 @@ class TextBox:
                     self.answers[i]=self.answers[i][0:length-1]
             elif (event.key=="Return"):
                     self.answers[i]+="\n"
+            elif (len(event.key)!=1):
+                return 
             elif (ord(event.key)>=33) and (ord(event.key)<=126):
                     self.answers[i]+=str(event.key)
 
@@ -634,14 +642,22 @@ class TextBox:
         if (self.name=="createEventTextBox") and (app.createEventTextBox.clicked==True):
             time1=convertTime(app,self.answers[0])
             time2=convertTime(app,self.answers[1])
+            if (time1 == None or time2 == None):
+                print("Invalid Time")
+                return
+
             date=self.answers[2]
+            if (not (date in ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"])):
+                print("Invalid date")
+                return
             name=self.answers[3]
             description=self.answers[4]
             
             dateObject=app.sunday+datetime.timedelta(days=determineWidthFromDate(date)) 
 
             
-            if violatesConstraints(app,time1,time2,dateObject):
+            if (violatesConstraints(app,time1,time2,dateObject)):
+                print("Violates Constraints")
                 app.failAutoSchedulePopUp.activated=True
             else:
                 newEvent=Event(app,name,"newEvent",description,date,time1,time2,"light green")
@@ -652,7 +668,11 @@ class TextBox:
         elif (self.name=="editEventTextBox") and (app.editEventTextBox.clicked==True):
             newTime1=convertTime(app,self.answers[0])
             newTime2=convertTime(app,self.answers[1])
+            if (newTime1 == None or newTime2 == None):
+                return
             newDate=self.answers[2]
+            if (not (newDate in ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"])):
+                return
             newName=self.answers[3]
             newDescription=self.answers[4]
             if (app.eventToEdit!=None):
@@ -669,12 +689,20 @@ class TextBox:
                         self.answers[i]=""
         elif (self.name=="changeSettingsTextBox") and (app.changeSettingsTextBox.clicked==True):
             startTime=self.answers[0]
+            if (len(startTime.split(" "))!=2):
+                return
             time,suffix=startTime.split(" ")
+            if (time.isdigit()==False):
+                return
             if suffix=="am":
                 app.startTime=int(time)%12
             else:
                 app.startTime=int(time)+12
+            if (self.answers[1].isdigit()==False):
+                return 
             app.breakLength=int(self.answers[1])
+            if (self.answers[2].isdigit()==False):
+                return      
             app.numEventsPerDay=int(self.answers[2])
             app.endTime=app.startTime+12
             for i in range(len(self.answers)):
@@ -685,19 +713,59 @@ class TextBox:
             #11/2/2004 to 11/18/2004
             rangeOfDatesString=self.answers[0]
             daysOfTheWeekString=self.answers[1]
+            #remove any spaces if the user put in any
+            daysOfTheWeekString=daysOfTheWeekString.replace(" ", "")
 
             validDaysList = daysOfTheWeekString.split(',')
+            for day in validDaysList:
+                if not (day in ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]):
+                    return
 
-
-
+            if (self.answers[2].isdigit()==False):
+                return
             maxInstancesPerDay=int(self.answers[2])
+            if (self.answers[3].isdigit()==False):
+                return
             numInstances=int(self.answers[3])
+            #the following must be an int of a float
+            if (self.answers[4].isdigit()==False):
+                if (len(self.answers[4].split("."))!=2):
+                    return
             eventLength=float(self.answers[4])
 
+            if (len(rangeOfDatesString.split())!=3):
+                return 
+            
             rangeOfDatesStringSplit=rangeOfDatesString.split()
             minDateString=rangeOfDatesStringSplit[0]
             maxDateString=rangeOfDatesStringSplit[2]
 
+            if rangeOfDatesStringSplit[1]!="to":
+                return 
+
+            #11/2/2004
+            if (len(minDateString.split("/"))!=3):
+                return
+            if (len(maxDateString.split("/"))!=3):
+                return
+
+            minDateSplit=minDateString.split("/")
+            maxDateSplit=maxDateString.split("/")
+
+            if (minDateSplit[0].isdigit()==False):
+                return
+            if (minDateSplit[1].isdigit()==False):
+                return
+            if (minDateSplit[2].isdigit()==False):
+                return
+            if (maxDateSplit[0].isdigit()==False):
+                return
+            if (maxDateSplit[1].isdigit()==False):
+                return
+            if (maxDateSplit[2].isdigit()==False):
+                return
+
+            
             minDateObject=datetime.datetime.strptime(minDateString, "%m/%d/%Y").date()
             maxDateObject=datetime.datetime.strptime(maxDateString, "%m/%d/%Y").date()
             
@@ -714,6 +782,15 @@ class TextBox:
                         self.answers[i]=""
 
         elif (self.name=="jumpToTextBox") and (app.jumpToTextBox.clicked==True):
+            if (len(self.answers[0].split("/"))!=3):
+                return
+            dateSplit=self.answers[0].split("/")
+            if (dateSplit[0].isdigit()==False):
+                return
+            if (dateSplit[1].isdigit()==False):
+                return
+            if (dateSplit[2].isdigit()==False):
+                return
             jumpToDate=self.answers[0]
             app.today=datetime.datetime.strptime(jumpToDate, "%m/%d/%Y").date()
             app.currentWeekDay = app.today.weekday()
