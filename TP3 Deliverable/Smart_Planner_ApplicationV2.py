@@ -643,6 +643,7 @@ class TextBox:
             for i in range(len(self.answers)):
                         self.answers[i]=""
         elif (self.name=="changeSettingsTextBox") and (app.changeSettingsTextBox.clicked==True):
+            originalStartTime=app.startTime
             startTime=self.answers[0]
             if (len(startTime.split(" "))!=2):
                 return
@@ -662,7 +663,9 @@ class TextBox:
             app.endTime=app.startTime+12
             for i in range(len(self.answers)):
                         self.answers[i]=""
-            
+            for (eventName,event) in app.eventDict.items():
+                event.startTime=(originalStartTime-app.startTime)+event.startTime
+                event.endTime=(originalStartTime-app.startTime)+event.endTime
         
         elif (self.name=="autoScheduleTextBox") and (app.autoScheduleTextBox.clicked==True):
             #11/2/2004 to 11/18/2004
