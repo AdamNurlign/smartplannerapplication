@@ -372,7 +372,7 @@ class Event:
     def drawEvent(self,app,canvas):
             validToDrawWeek=(app.calendarMode=="Week") and (self.dateObject>=app.sunday) and (self.dateObject<=app.saturday)
             validToDrawDay=(app.calendarMode=="Day") and (self.dateObject==app.today)
-            validTime= (self.startTime>=convertTime(app,str(app.startTime)+":00") and self.endTime<=convertTime(app,str(app.endTime)+":00"))
+            validTime= (self.startTime>=0) and (self.endTime<=12)
             if (validToDrawWeek or validToDrawDay) and (validTime): 
                 startXCord=0      
                 if (app.calendarMode=="Week"):
@@ -593,6 +593,8 @@ class TextBox:
         if (self.name=="createEventTextBox") and (app.createEventTextBox.clicked==True):
             time1=convertTime(app,self.answers[0])
             time2=convertTime(app,self.answers[1])
+            if (time2<time1):
+                time2=time2+12
             if (time1 == None or time2 == None):
                 print("Invalid Time")
                 return
@@ -619,6 +621,8 @@ class TextBox:
         elif (self.name=="editEventTextBox") and (app.editEventTextBox.clicked==True):
             newTime1=convertTime(app,self.answers[0])
             newTime2=convertTime(app,self.answers[1])
+            if (newTime2<newTime1):
+                newTime2=newTime2+12
             if (newTime1 == None or newTime2 == None):
                 return
             newDate=self.answers[2]
