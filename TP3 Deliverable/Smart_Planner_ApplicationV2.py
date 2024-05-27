@@ -650,7 +650,9 @@ class TextBox:
             time,suffix=startTime.split(" ")
             if (time.isdigit()==False):
                 return
-            if suffix=="am":
+            if (startTime=="12 pm"):
+                app.startTime=12
+            elif (suffix=="am"):
                 app.startTime=int(time)%12
             else:
                 app.startTime=int(time)+12
