@@ -115,10 +115,21 @@ def mousePressed(app,event):
 
 
 
-
+def arrowKeyPressed(app,event):
+    if (event.key=="Up"):
+        app.startTime=(app.startTime-1)%24
+        for (eventName,event) in app.eventDict.items():
+            event.startTime=event.startTime+1
+            event.endTime=event.endTime+1
+    elif (event.key=="Down"):
+        app.startTime=(app.startTime+1)%24
+        for (eventName,event) in app.eventDict.items():
+            event.startTime=event.startTime-1
+            event.endTime=event.endTime-1
 def keyPressed(app,event):
     for (textBoxName,textBox) in app.textBoxDict.items():
         textBox.keyPressed(app,event)
+    arrowKeyPressed(app,event)
     
 
 def drawWeekCalendarTime(app,canvas):
