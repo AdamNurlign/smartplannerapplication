@@ -14,6 +14,7 @@ def appStarted(app):
     app.eventDict={}
     app.buttonList=[]
     app.textBoxDict=dict()
+    app.messagePopUpDict=dict()
 
 
     app.deleteButton=Button(app,"Delete","Delete","red",7,1,None)
@@ -29,10 +30,13 @@ def appStarted(app):
     app.autoScheduleButton=Button(app,"autoSchedule","autoSchedule","blue",7,10,"autoScheduleTextBox")
     app.jumpToButton=Button(app,"jumpTo","jumpTo","white",7,9,"jumpToTextBox")
     app.homeButton=Button(app,"home","home","light pink",7,11,None)
+    app.helpButton=Button(app,"help","help","yellow",7,12,None)
 
     app.buttonList+=[app.deleteButton,app.createEventButton,app.editEventButton,
     app.nextWeekButton,app.prevWeekButton,app.nextDayButton,app.prevDayButton,
-    app.switchModeButton,app.autoScheduleButton,app.jumpToButton,app.homeButton]
+    app.switchModeButton,app.autoScheduleButton,app.jumpToButton,app.homeButton,
+    app.helpButton
+    ]
 
 
     app.changeSettingsTextBox=TextBox(app,"changeSettingsTextBox",["What is the earliest time you would like to work? (ex: '8 am')","How long would you like your breaks? (min)","Max # of events per day: "])
@@ -48,9 +52,23 @@ def appStarted(app):
     app.textBoxDict["jumpToTextBox"]=app.jumpToTextBox
 
 
-    app.messagePopUpDict=dict()
+
     app.failAutoSchedulePopUp=MessagePopUp(app,"failAutoSchedule","Failed to schedule events due to your settings and planned events. Please try again.")
+    app.helpPopUp=MessagePopUp(app,"help",
+    """Here is how you use the Smart Planner Application.\n\n
+    You can use the up and down arrow key to toggle the times you see on the calendar.\n
+    You can create events manually by clicking the createEvent button.\n
+    You can create events automatically based on user preferences using the autoSchedule button.\n,
+    You can delete events by clicking the deleteEvent button and then clicking on the event you would like to delete\n
+    You can edit events by clicking the editEvent button and then clicking on the event you would like to edit\n
+    You can switch between the week and days you are viewing on the calendar by clicking on the 
+    nextWeek, prevWeek, nextDay, and prevDay buttons.\n
+    You can switch between the week calendar mode and day calendar mode by clicking the switchMode button.\n
+    You can jump to a specific day by clicking the jumpTo button.
+    """)
+
     app.messagePopUpDict["failAutoSchedule"]=app.failAutoSchedulePopUp
+    app.messagePopUpDict["help"]=app.helpPopUp
 
     app.clickedDeleteEvent=False
     app.clickedEditEvent=False
@@ -69,12 +87,8 @@ def appStarted(app):
     #number of events each day
     app.breakLength=0
     app.numEventsPerDay=100000000
-
-
     app.eventToEdit=None
 
-    
-    
 def convertTime(app,timeString):
     hour=""
     minute=""
@@ -111,9 +125,6 @@ def mousePressed(app,event):
     if (app.calendarMode=="Home"):
         app.startApplicationButton.mousePressed(app,event)
         app.changeSettingsButton.mousePressed(app,event)
-    
-
-
 
 def arrowKeyPressed(app,event):
     if (event.key=="Up"):
@@ -126,12 +137,12 @@ def arrowKeyPressed(app,event):
         for (eventName,event) in app.eventDict.items():
             event.startTime=event.startTime-1
             event.endTime=event.endTime-1
+
 def keyPressed(app,event):
     for (textBoxName,textBox) in app.textBoxDict.items():
         textBox.keyPressed(app,event)
     arrowKeyPressed(app,event)
     
-
 def drawWeekCalendarTime(app,canvas):
     for i in range(12):
         timeSuffix=""
@@ -144,7 +155,6 @@ def drawWeekCalendarTime(app,canvas):
             timeToWrite=12
         canvas.create_text(app.borderWidth/2,app.borderHeight+((app.height-app.borderHeight*2)/12)*i,
         text=str(timeToWrite)+" "+timeSuffix,fill="black")
-
 
 def drawWeekCalendarDate(app,canvas):
     daysOfTheWeek=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
@@ -483,18 +493,11 @@ class Button:
                 app.calendarMode="Week"
             elif (self.buttonType=="home"):
                 app.calendarMode="Home"
+            elif (self.buttonType=="help"):
+                app.helpPopUp.activated=True
            
-
-                
-
-                
-            else: pass
-
-            
-            
-    
-
-
+            else: 
+                pass
 
     def drawButton(self,app,canvas):
         canvas.create_rectangle(app.borderWidth+(self.xPos*((app.width-2*app.borderWidth)/7)),
@@ -522,7 +525,7 @@ class MessagePopUp:
                 
     def drawMessagePopUp(self,app,canvas):
         if (self.activated==True):
-            canvas.create_rectangle(0.25*app.width,0.25*app.height,0.75*app.width,0.75*app.height,
+            canvas.create_rectangle(0.1*app.width,0.1*app.height,0.9*app.width,0.9*app.height,
             fill="light yellow")
             canvas.create_text(0.5*app.width,0.5*app.height,text=self.message,fill="black")
             
