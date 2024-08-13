@@ -16,7 +16,7 @@
 
 
 How to Run:
-	The user should run the Smart_Planner_Application.py
+	The user should run the Smart_Planner_Application_v2.py
 	file to use the application.
 
 Libraries:
